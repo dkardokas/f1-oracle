@@ -1,0 +1,11 @@
+{
+  "$schema": "https://dev.office.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "f-1-oracle-client-side-solution",
+    "id": "a0c0a5d9-48e9-4b0f-9ddb-b72a1e57bd00",
+    "version": "1.0.0.0"
+  },
+  "paths": {
+    "zippedPackage": "solution/f-1-oracle.sppkg"
+  }
+}
