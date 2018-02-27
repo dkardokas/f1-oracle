@@ -29,8 +29,8 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
         <div className={styles.container}>
           <div className={styles.row}>
             <div className={styles.column}>
-              <span className={styles.title}>Welcome to F1 Oracle!</span>              
-              <p className={styles.description}>Next race is: {escape(this.state ? this.state.description : "-loading-")}</p>
+              <span className={styles.title}>Welcome to F1 Oracle!</span>       
+              <p className={styles.description} hidden={!this.state || !this.state.description || this.state.description.length < 1} >Next race is: {this.state ? this.state.description : ''}</p>
             </div>
           </div>
           <div id="spListContainer" />
