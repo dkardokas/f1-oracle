@@ -12,9 +12,15 @@ import {
   EnvironmentType
 } from '@microsoft/sp-core-library';
 
-import {ListService} from '../common/services/ListService';
+import {
+  Fabric,
+  DefaultButton
+} from 'office-ui-fabric-react';
 
-export interface IF1RaceList{
+
+import { ListService } from '../common/services/ListService';
+
+export interface IF1RaceList {
   value: IF1Race[];
 }
 export interface IF1Race {
@@ -23,34 +29,35 @@ export interface IF1Race {
 }
 
 export default class F1Entry extends React.Component<IF1EntryProps, any> {
-  private LIST_TITLE_RACES:string = "F1_Races";
-  private LIST_TITLE_ENTRIES:string = "F1_Entries";
-  private _listService:ListService;
+  private LIST_TITLE_RACES: string = "F1_Races";
+  private LIST_TITLE_ENTRIES: string = "F1_Entries";
+  private _listService: ListService;
 
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state = {showEntryForm: false};
+    this.state = { showEntryForm: false };
     this._listService = new ListService(this.props.context.spHttpClient);
     this._showEntryForm = this._showEntryForm.bind(this);
   }
 
   public render(): React.ReactElement<IF1EntryProps> {
     return (
+      <Fabric>
       <div className={styles.f1Entry}>
         <div className={styles.container}>
           <div className={styles.row} hidden={this.state.showEntryForm}>
             <div className={styles.column}>
-              <span className={styles.title}>Welcome to F1 Oracle!</span>       
+              <span className={styles.title}>Welcome to F1 Oracle!</span>
               <p className={styles.description} hidden={!this.state.nextRaceTitle} >Next race is: {this.state.nextRaceTitle}</p>
               <br />
               <div hidden={!this.state.userEntryChecked || this.state.userHasEntry}>
                 <p>You do not have an entry</p>
-                <br />
-                <button onClick={this._showEntryForm}>Place Entry</button>
+                <br />                
+                  <DefaultButton onClick={this._showEntryForm}>Place Entry</DefaultButton>                
               </div>
               <div hidden={!this.state.userEntryChecked || !this.state.userHasEntry}>
                 <p>You have already entered:</p>
-              </div>            
+              </div>
             </div>
           </div>
           <div className={styles.row} hidden={!this.state.showEntryForm}>
@@ -64,18 +71,19 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
           </div>
         </div>
       </div>
+      </Fabric>
     );
   }
 
-  public componentDidMount(){
-     this._getNextRace()
+  public componentDidMount() {
+    this._getNextRace()
       .then(raceResponse => {
         let nextRace: string = raceResponse.value[0].Title;
         this.setState(() => {
-          return {nextRaceTitle: nextRace};
+          return { nextRaceTitle: nextRace };
         });
 
-        this._getUserEntry().then(entryResponse =>{
+        this._getUserEntry().then(entryResponse => {
           let hasEntry = entryResponse.value.length > 0;
           this.setState(() => {
             return {
@@ -90,22 +98,22 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
       });
   }
 
-  
+
   private _getNextRace(): Promise<IF1RaceList> {
-    let q:string = `<View><Query><Where><Geq><FieldRef Name='ID'/><Value Type='Number'>2</Value></Geq></Where></Query><RowLimit>100</RowLimit></View>`;
-    
+    let q: string = `<View><Query><Where><Geq><FieldRef Name='ID'/><Value Type='Number'>2</Value></Geq></Where></Query><RowLimit>100</RowLimit></View>`;
+
     return this._listService.getListItemsByQuery(this.props.context.pageContext.web.absoluteUrl, this.LIST_TITLE_RACES, q);
   }
 
-  private _getUserEntry(): Promise<any>{
-    let q:string = `
+  private _getUserEntry(): Promise<any> {
+    let q: string = `
     <View><Query><Where><And><Eq><FieldRef Name='Race' /><Value Type='Lookup'>` + this.state.nextRaceTitle + `</Value></Eq>
     <Eq><FieldRef Name='Author' /><Value Type='User'>` + this.props.context.pageContext.user.displayName + `</Value></Eq></And></Where></Query></View>`
-    
+
     return this._listService.getListItemsByQuery(this.props.context.pageContext.web.absoluteUrl, this.LIST_TITLE_ENTRIES, q);
   }
 
-  private _showEntryForm(){
+  private _showEntryForm() {
     this.setState(prevState => ({
       showEntryForm: !prevState.showEntryForm
     }));
