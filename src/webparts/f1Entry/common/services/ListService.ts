@@ -6,7 +6,7 @@ export class ListService {
 	/***************************************************************************
      * The spHttpClient object used for performing REST calls to SharePoint
      ***************************************************************************/
-    private spHttpClient: SPHttpClient;
+	private spHttpClient: SPHttpClient;
 
 
 	/**************************************************************************************************
@@ -98,5 +98,52 @@ export class ListService {
 			.catch((error) => { reject(error); }); 
         });
 	}
+
+	public createItem(siteUrl:string, listName:string): void {
+		this.getListItemEntityTypeName(siteUrl, listName)
+		  .then((listItemEntityTypeName: string): Promise<SPHttpClientResponse> => {
+			const body: string = JSON.stringify({
+			  '__metadata': {
+				'type': listItemEntityTypeName
+			  },
+			  'Title': `Item ${new Date()}`
+			});
+			return this.spHttpClient.post(`${siteUrl}/_api/web/lists/getbytitle('${listName}')/items`,
+			  SPHttpClient.configurations.v1,
+			  {
+				headers: {
+				  'Accept': 'application/json;odata=nometadata',
+				  'Content-type': 'application/json;odata=verbose',
+				  'odata-version': ''
+				},
+				body: body
+			  });
+		  })
+		  .then((response: SPHttpClientResponse): Promise<any> => {
+			return response.json();
+		  });		  
+	  }
+
+	  private getListItemEntityTypeName(siteUrl:string, listName:string): Promise<string> {
+		return new Promise<string>((resolve: (listItemEntityTypeName: string) => void, reject: (error: any) => void): void => {
+		  this.spHttpClient.get(`${siteUrl}/_api/web/lists/getbytitle('${listName}')?$select=ListItemEntityTypeFullName`,
+			SPHttpClient.configurations.v1,
+			{
+			  headers: {
+				'Accept': 'application/json;odata=nometadata',
+				'odata-version': ''
+			  }
+			})
+			.then((response: SPHttpClientResponse): Promise<{ ListItemEntityTypeFullName: string }> => {
+			  return response.json();
+			}, (error: any): void => {
+			  reject(error);
+			})
+			.then((response: { ListItemEntityTypeFullName: string }): void => {
+			  resolve(response.ListItemEntityTypeFullName);
+			});
+		});
+	  }
+	
 
 }
