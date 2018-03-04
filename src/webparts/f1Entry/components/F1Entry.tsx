@@ -17,6 +17,7 @@ export interface IF1RaceList {
 export interface IF1Race {
   Title: string;
   RaceDate: string;
+  Id: number;
 }
 export interface IF1Driver {
   Title: string;
@@ -29,6 +30,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
   private LIST_TITLE_DRIVERS: string = "F1_Drivers";
   private _listService: ListService;
   private _webUrl: string;
+  private _selectedP1?: string;
 
 
   constructor(props) {
@@ -36,6 +38,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
     this.state = { showEntryForm: false };
     this._listService = new ListService(this.props.context.spHttpClient);    
     this._webUrl = this.props.context.pageContext.web.absoluteUrl;
+   
   }
 
   public render(): React.ReactElement<IF1EntryProps> {
@@ -69,22 +72,37 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
           <Dropdown
             label='Winner'
             options={this.state.driversList}
+            onChanged={ (item) => {this.setState(() => {return {
+                P1: item
+               }})}}
           />
           <Dropdown
             label='P2'
             options={this.state.driversList}
+            onChanged={ (item) => {this.setState(() => {return {
+              P2: item
+             }})}}
           />
           <Dropdown
             label='P3'
             options={this.state.driversList}
+            onChanged={ (item) => {this.setState(() => {return {
+              P3: item
+             }})}}
           />
           <Dropdown
             label='P4'
             options={this.state.driversList}
+            onChanged={ (item) => {this.setState(() => {return {
+              P4: item
+             }})}}
           />
           <Dropdown
             label='P5'
             options={this.state.driversList}
+            onChanged={ (item) => {this.setState(() => {return {
+              P5: item
+             }})}}
           />
         </Panel>
       </Fabric>
@@ -112,9 +130,9 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
   public componentDidMount() {
     this._getNextRace().then(raceResponse => {
-      let nextRace: string = raceResponse.value[0].Title;
       this.setState(() => {
-        return { nextRaceTitle: nextRace };
+        return { nextRaceTitle: raceResponse.value[0].Title,
+        nextRaceId: raceResponse.value[0].Id  };
       });
 
       this._getUserEntry().then(entryResponse => {
@@ -182,7 +200,15 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
   @autobind
   private _submitEntry(){
-    this._listService.createItem(this._webUrl, this.LIST_TITLE_ENTRIES);
+    let selectedData = {
+      Entry_P1Id: this.state.P1.key,
+      Entry_P2Id: this.state.P2.key,
+      Entry_P3Id: this.state.P3.key,
+      Entry_P4Id: this.state.P4.key,
+      Entry_P5Id: this.state.P5.key,
+      RaceId: this.state.nextRaceId
+    }
+    this._listService.createItem(this._webUrl, this.LIST_TITLE_ENTRIES, selectedData);
     this._showEntryForm();
   }
 }

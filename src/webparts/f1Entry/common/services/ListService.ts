@@ -1,4 +1,4 @@
-import { Text }                                                 	from '@microsoft/sp-core-library';
+import { Text } from '@microsoft/sp-core-library';
 import { SPHttpClient, ISPHttpClientOptions, SPHttpClientResponse } from '@microsoft/sp-http';
 
 export class ListService {
@@ -13,9 +13,9 @@ export class ListService {
      * Constructor
      * @param httpClient : The spHttpClient required to perform REST calls against SharePoint
      **************************************************************************************************/
-    constructor(spHttpClient: SPHttpClient) {
-        this.spHttpClient = spHttpClient;
-    }
+	constructor(spHttpClient: SPHttpClient) {
+		this.spHttpClient = spHttpClient;
+	}
 
 
 	/**************************************************************************************************
@@ -25,11 +25,11 @@ export class ListService {
 	 * @param camlQuery : The CAML query to perform on the specified list
 	 **************************************************************************************************/
 	public getListItemsByQuery(webUrl: string, listTitle: string, camlQuery: string): Promise<any> {
-		return new Promise<any>((resolve,reject) => {
+		return new Promise<any>((resolve, reject) => {
 			let endpoint = Text.format("{0}/_api/web/lists/GetByTitle('{1}')/GetItems?$expand=FieldValuesAsText,FieldValuesAsHtml", webUrl, listTitle);
-			let data:any = { 
-				query : { 
-					__metadata: { type: "SP.CamlQuery" }, 
+			let data: any = {
+				query: {
+					__metadata: { type: "SP.CamlQuery" },
 					ViewXml: camlQuery
 				}
 			};
@@ -37,17 +37,17 @@ export class ListService {
 
 			this.spHttpClient.post(endpoint, SPHttpClient.configurations.v1, options)
 				.then((postResponse: SPHttpClientResponse) => {
-					if(postResponse.ok) {
+					if (postResponse.ok) {
 						resolve(postResponse.json());
 					}
 					else {
 						reject(postResponse);
 					}
 				})
-				.catch((error) => { 
-					reject(error); 
-				}); 
-        });
+				.catch((error) => {
+					reject(error);
+				});
+		});
 	}
 
 
@@ -56,22 +56,22 @@ export class ListService {
 	 * @param webUrl : The web URL from which the list titles must be taken from
 	 **************************************************************************************************/
 	public getListTitlesFromWeb(webUrl: string): Promise<string[]> {
-		return new Promise<string[]>((resolve,reject) => {
+		return new Promise<string[]>((resolve, reject) => {
 			let endpoint = Text.format("{0}/_api/web/lists?$select=Title&$filter=(IsPrivate eq false) and (IsCatalog eq false) and (Hidden eq false)", webUrl);
 			this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1).then((response: SPHttpClientResponse) => {
-				if(response.ok) {
+				if (response.ok) {
 					response.json().then((data: any) => {
-						let listTitles:string[] = data.value.map((list) => { return list.Title; });
+						let listTitles: string[] = data.value.map((list) => { return list.Title; });
 						resolve(listTitles.sort());
 					})
-					.catch((error) => { reject(error); });
+						.catch((error) => { reject(error); });
 				}
 				else {
 					reject(response);
 				}
 			})
-			.catch((error) => { reject(error); }); 
-        });
+				.catch((error) => { reject(error); });
+		});
 	}
 
 
@@ -83,67 +83,73 @@ export class ListService {
 	 * @param orderBy : Optionnaly, the by which the results needs to be ordered
 	 **************************************************************************************************/
 	public getListFields(webUrl: string, listTitle: string, selectProperties?: string[], orderBy?: string): Promise<any> {
-		return new Promise<any>((resolve,reject) => {
+		return new Promise<any>((resolve, reject) => {
 			let selectProps = selectProperties ? selectProperties.join(',') : '';
 			let order = orderBy ? orderBy : 'InternalName';
 			let endpoint = Text.format("{0}/_api/web/lists/GetByTitle('{1}')/Fields?$select={2}&$orderby={3}", webUrl, listTitle, selectProps, order);
 			this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1).then((response: SPHttpClientResponse) => {
-				if(response.ok) {
+				if (response.ok) {
 					resolve(response.json());
 				}
 				else {
 					reject(response);
 				}
 			})
-			.catch((error) => { reject(error); }); 
-        });
+				.catch((error) => { reject(error); });
+		});
 	}
 
-	public createItem(siteUrl:string, listName:string): void {
+	public createItem(siteUrl: string, listName: string, data: any): void {
 		this.getListItemEntityTypeName(siteUrl, listName)
-		  .then((listItemEntityTypeName: string): Promise<SPHttpClientResponse> => {
-			const body: string = JSON.stringify({
-			  '__metadata': {
-				'type': listItemEntityTypeName
-			  },
-			  'Title': `Item ${new Date()}`
-			});
-			return this.spHttpClient.post(`${siteUrl}/_api/web/lists/getbytitle('${listName}')/items`,
-			  SPHttpClient.configurations.v1,
-			  {
-				headers: {
-				  'Accept': 'application/json;odata=nometadata',
-				  'Content-type': 'application/json;odata=verbose',
-				  'odata-version': ''
-				},
-				body: body
-			  });
-		  })
-		  .then((response: SPHttpClientResponse): Promise<any> => {
-			return response.json();
-		  });		  
-	  }
+			.then((listItemEntityTypeName: string): Promise<SPHttpClientResponse> => {
+				let spBody = {
+					'__metadata': {
+						'type': listItemEntityTypeName
+					},
+					'Title': `Item ${new Date()}`
+				};
+				Object.keys(data).forEach(key => {
+					spBody[key] = data[key];
+				});
 
-	  private getListItemEntityTypeName(siteUrl:string, listName:string): Promise<string> {
-		return new Promise<string>((resolve: (listItemEntityTypeName: string) => void, reject: (error: any) => void): void => {
-		  this.spHttpClient.get(`${siteUrl}/_api/web/lists/getbytitle('${listName}')?$select=ListItemEntityTypeFullName`,
-			SPHttpClient.configurations.v1,
-			{
-			  headers: {
-				'Accept': 'application/json;odata=nometadata',
-				'odata-version': ''
-			  }
+				const body: string = JSON.stringify(spBody);
+
+				return this.spHttpClient.post(`${siteUrl}/_api/web/lists/getbytitle('${listName}')/items`,
+					SPHttpClient.configurations.v1,
+					{
+						headers: {
+							'Accept': 'application/json;odata=nometadata',
+							'Content-type': 'application/json;odata=verbose',
+							'odata-version': ''
+						},
+						body: body
+					});
 			})
-			.then((response: SPHttpClientResponse): Promise<{ ListItemEntityTypeFullName: string }> => {
-			  return response.json();
-			}, (error: any): void => {
-			  reject(error);
-			})
-			.then((response: { ListItemEntityTypeFullName: string }): void => {
-			  resolve(response.ListItemEntityTypeFullName);
+			.then((response: SPHttpClientResponse): Promise<any> => {
+				return response.json();
 			});
+	}
+
+	private getListItemEntityTypeName(siteUrl: string, listName: string): Promise<string> {
+		return new Promise<string>((resolve: (listItemEntityTypeName: string) => void, reject: (error: any) => void): void => {
+			this.spHttpClient.get(`${siteUrl}/_api/web/lists/getbytitle('${listName}')?$select=ListItemEntityTypeFullName`,
+				SPHttpClient.configurations.v1,
+				{
+					headers: {
+						'Accept': 'application/json;odata=nometadata',
+						'odata-version': ''
+					}
+				})
+				.then((response: SPHttpClientResponse): Promise<{ ListItemEntityTypeFullName: string }> => {
+					return response.json();
+				}, (error: any): void => {
+					reject(error);
+				})
+				.then((response: { ListItemEntityTypeFullName: string }): void => {
+					resolve(response.ListItemEntityTypeFullName);
+				});
 		});
-	  }
-	
+	}
+
 
 }
