@@ -92,7 +92,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
             };
           });
 
-        })
+        });
 
 
       });
@@ -108,7 +108,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
   private _getUserEntry(): Promise<any> {
     let q: string = `
     <View><Query><Where><And><Eq><FieldRef Name='Race' /><Value Type='Lookup'>` + this.state.nextRaceTitle + `</Value></Eq>
-    <Eq><FieldRef Name='Author' /><Value Type='User'>` + this.props.context.pageContext.user.displayName + `</Value></Eq></And></Where></Query></View>`
+    <Eq><FieldRef Name='Author' /><Value Type='User'>` + this.props.context.pageContext.user.displayName + `</Value></Eq></And></Where></Query></View>`;
 
     return this._listService.getListItemsByQuery(this.props.context.pageContext.web.absoluteUrl, this.LIST_TITLE_ENTRIES, q);
   }
