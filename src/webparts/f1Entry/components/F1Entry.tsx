@@ -143,7 +143,6 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
             userEntryChecked: true
           };
         });
-<<<<<<< HEAD
 
         this._getUserEntry().then(entryResponse => {
           let hasEntry = entryResponse.value.length > 0;
@@ -153,12 +152,8 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
               userEntryChecked: true
             };
           });
-
         });
-
-
-=======
-      })
+      });
     });
 
     this._getDriversList().then(driversResponse => {
@@ -180,7 +175,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
       });
       this.setState(() => {
         return { driversList: driverOptions };
->>>>>>> 38b4f43099d358710ef8187a746be86e022892b8
+
       });
 
     });
