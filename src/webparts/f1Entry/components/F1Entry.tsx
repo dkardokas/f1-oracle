@@ -29,6 +29,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
   private LIST_TITLE_RACES: string = "F1_Races";
   private LIST_TITLE_ENTRIES: string = "F1_Entries";
   private LIST_TITLE_DRIVERS: string = "F1_Drivers";
+
   private _listService: ListService;
   private _webUrl: string;
   private _selectedP1?: string;
@@ -36,7 +37,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
   constructor(props) {
     super(props);
-    this.state = { showEntryForm: false };
+    this.state = { showEntryForm: false, allselectedKeys: [] };
     this._listService = new ListService(this.props.context.spHttpClient);
     this._webUrl = this.props.context.pageContext.web.absoluteUrl;
 
@@ -51,10 +52,10 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
               <div className={styles.column}>
                 <span className={styles.title}>Welcome to F1 Oracle!</span>
                 <p className={styles.description} hidden={!this.state.nextRaceTitle} >Next race is: {this.state.nextRaceTitle}
-                <br />
-                on {this.state.nextRaceDate}
+                  <br />
+                  on {this.state.nextRaceDate}
                 </p>
-                
+
                 <div hidden={!this.state.userEntryChecked || this.state.userHasEntry}>
                   <p>You do not have an entry</p>
                   <br />
@@ -69,72 +70,44 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
           <Modal
             isOpen={this.state.showEntryForm}
-            // onDismiss={ this._closeModal }
             isBlocking={true}
             containerClassName={styles.modalContainer}
           >
             <Dropdown
               label='Winner'
               options={this.state.driversList}
-              onChanged={(item) => {
-                this.setState(() => {
-                  return {
-                    P1: item
-                  }
-                })
-              }}
+              onChanged={(item) => this._driverSelected('P1', item)}
             />
             <Dropdown
               label='P2'
               options={this.state.driversList}
-              onChanged={(item) => {
-                this.setState(() => {
-                  return {
-                    P2: item
-                  }
-                })
-              }}
+              onChanged={(item) => this._driverSelected('P2', item)}
+
             />
             <Dropdown
               label='P3'
               options={this.state.driversList}
-              onChanged={(item) => {
-                this.setState(() => {
-                  return {
-                    P3: item
-                  }
-                })
-              }}
+              onChanged={(item) => this._driverSelected('P3', item)}
             />
             <Dropdown
               label='P4'
               options={this.state.driversList}
-              onChanged={(item) => {
-                this.setState(() => {
-                  return {
-                    P4: item
-                  }
-                })
-              }}
+              onChanged={(item) => this._driverSelected('P4', item)}
             />
             <Dropdown
               label='P5'
               options={this.state.driversList}
-              onChanged={(item) => {
-                this.setState(() => {
-                  return {
-                    P5: item
-                  }
-                })
-              }}
+              onChanged={(item) => this._driverSelected('P5', item)}
             />
 
             <div>
+              <p>{this.state.validationError}</p>
               <PrimaryButton
                 onClick={this._submitEntry}
                 style={{ 'marginRight': '8px' }}
+                disabled={!this.state.selectionsValid}
               >
-                Save
+                Submit
               </PrimaryButton>
               <DefaultButton
                 onClick={this._showEntryForm}
@@ -160,25 +133,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
         };
       });
 
-      this._getUserEntry().then(entryResponse => {
-        let hasEntry = entryResponse.value.length > 0;
-        this.setState(() => {
-          return {
-            userHasEntry: hasEntry,
-            userEntryChecked: true
-          };
-        });
-
-        this._getUserEntry().then(entryResponse => {
-          let hasEntry = entryResponse.value.length > 0;
-          this.setState(() => {
-            return {
-              userHasEntry: hasEntry,
-              userEntryChecked: true
-            };
-          });
-        });
-      });
+      this._checkEntry();
     });
 
     this._getDriversList().then(driversResponse => {
@@ -222,9 +177,53 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
   }
 
   private _getDriversList(): Promise<any> {
-    let q: string = `<View><Query><OrderBy><FieldRef Name='Team' Ascending='True' /></OrderBy></Query></View>`
+    let q: string = `<View><Query><OrderBy><FieldRef Name='Team' Ascending='True' /></OrderBy></Query></View>`;
 
     return this._listService.getListItemsByQuery(this._webUrl, this.LIST_TITLE_DRIVERS, q);
+  }
+
+  private _checkEntry(){
+    this._getUserEntry().then(entryResponse => {
+      let hasEntry = entryResponse.value.length > 0;
+      this.setState(() => {
+        return {
+          userHasEntry: hasEntry,
+          userEntryChecked: true
+        };
+      });
+    });
+  }
+
+  @autobind
+  private _driverSelected(fieldName: string, valSelected) {
+    {
+      this.setState((prevState) => {
+        var allSelected: Array<number> = prevState.allselectedKeys;
+        var selectionsValid: boolean = false;
+        var validationError: string = prevState.validationError ? prevState.validationError : "";
+        if (prevState[fieldName]) { //remove old value
+          allSelected.splice(allSelected.indexOf(prevState[fieldName].key), 1);
+        }
+
+        if (allSelected.filter(x => x === valSelected.key).length > 0) {
+          validationError = "Please select unique names. Duplicates are not allowed.";
+        } else {          
+          validationError = "";
+          if (allSelected.filter((v, i, self) => {return self.indexOf(v) === i}).length == 4) {
+            selectionsValid = true;            
+          }
+        }
+        allSelected.push(valSelected.key);
+
+        var newState = {};
+        newState[fieldName] = valSelected;
+        newState["selectionsValid"] = selectionsValid;
+        newState["allselectedKeys"] = allSelected;
+        newState["validationError"] = validationError;
+        return newState;
+      });
+    }
+
   }
 
   @autobind
@@ -232,7 +231,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
     this.setState((prevState, props) => {
       return {
         showEntryForm: !prevState.showEntryForm
-      }
+      };
     }
     );
   }
@@ -246,12 +245,14 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
       Entry_P4Id: this.state.P4.key,
       Entry_P5Id: this.state.P5.key,
       RaceId: this.state.nextRaceId
-    }
-    this._listService.createItem(this._webUrl, this.LIST_TITLE_ENTRIES, selectedData);
-    this.setState((prevState, props) => {
-      return {
-        showEntryForm: false
-      }
-    });
+    };
+    this._listService.createItem(this._webUrl, this.LIST_TITLE_ENTRIES, selectedData).then(() =>{
+      this._checkEntry();
+      this.setState((prevState, props) => {
+        return {
+          showEntryForm: false
+        };
+      });
+    });   
   }
 }

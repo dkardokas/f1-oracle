@@ -99,7 +99,8 @@ export class ListService {
 		});
 	}
 
-	public createItem(siteUrl: string, listName: string, data: any): void {
+	public createItem(siteUrl: string, listName: string, data: any): Promise<boolean> {
+		return new Promise<boolean>((resolve: (result: boolean) => void, reject: (error: any) => void): void => {
 		this.getListItemEntityTypeName(siteUrl, listName)
 			.then((listItemEntityTypeName: string): Promise<SPHttpClientResponse> => {
 				let spBody = {
@@ -125,10 +126,13 @@ export class ListService {
 						body: body
 					});
 			})
-			.then((response: SPHttpClientResponse): Promise<any> => {
-				return response.json();
+			.then((response: SPHttpClientResponse): void => {
+				//return response.json();
+				resolve(true);
 			});
+		});
 	}
+
 
 	private getListItemEntityTypeName(siteUrl: string, listName: string): Promise<string> {
 		return new Promise<string>((resolve: (listItemEntityTypeName: string) => void, reject: (error: any) => void): void => {
