@@ -6,6 +6,7 @@ import { SPHttpClient, SPHttpClientResponse, ISPHttpClientOptions } from '@micro
 import { Environment, EnvironmentType } from '@microsoft/sp-core-library';
 import { Fabric, DefaultButton, PrimaryButton } from 'office-ui-fabric-react';
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
+import { Modal } from 'office-ui-fabric-react/lib/Modal';
 import { Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption } from 'office-ui-fabric-react/lib/Dropdown';
 import { autobind } from 'office-ui-fabric-react/lib/Utilities';
 
@@ -36,9 +37,9 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
   constructor(props) {
     super(props);
     this.state = { showEntryForm: false };
-    this._listService = new ListService(this.props.context.spHttpClient);    
+    this._listService = new ListService(this.props.context.spHttpClient);
     this._webUrl = this.props.context.pageContext.web.absoluteUrl;
-   
+
   }
 
   public render(): React.ReactElement<IF1EntryProps> {
@@ -49,8 +50,11 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
             <div className={styles.row}>
               <div className={styles.column}>
                 <span className={styles.title}>Welcome to F1 Oracle!</span>
-                <p className={styles.description} hidden={!this.state.nextRaceTitle} >Next race is: {this.state.nextRaceTitle}</p>
+                <p className={styles.description} hidden={!this.state.nextRaceTitle} >Next race is: {this.state.nextRaceTitle}
                 <br />
+                on {this.state.nextRaceDate}
+                </p>
+                
                 <div hidden={!this.state.userEntryChecked || this.state.userHasEntry}>
                   <p>You do not have an entry</p>
                   <br />
@@ -62,77 +66,98 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
               </div>
             </div>
           </div>
+
+          <Modal
+            isOpen={this.state.showEntryForm}
+            // onDismiss={ this._closeModal }
+            isBlocking={true}
+            containerClassName={styles.modalContainer}
+          >
+            <Dropdown
+              label='Winner'
+              options={this.state.driversList}
+              onChanged={(item) => {
+                this.setState(() => {
+                  return {
+                    P1: item
+                  }
+                })
+              }}
+            />
+            <Dropdown
+              label='P2'
+              options={this.state.driversList}
+              onChanged={(item) => {
+                this.setState(() => {
+                  return {
+                    P2: item
+                  }
+                })
+              }}
+            />
+            <Dropdown
+              label='P3'
+              options={this.state.driversList}
+              onChanged={(item) => {
+                this.setState(() => {
+                  return {
+                    P3: item
+                  }
+                })
+              }}
+            />
+            <Dropdown
+              label='P4'
+              options={this.state.driversList}
+              onChanged={(item) => {
+                this.setState(() => {
+                  return {
+                    P4: item
+                  }
+                })
+              }}
+            />
+            <Dropdown
+              label='P5'
+              options={this.state.driversList}
+              onChanged={(item) => {
+                this.setState(() => {
+                  return {
+                    P5: item
+                  }
+                })
+              }}
+            />
+
+            <div>
+              <PrimaryButton
+                onClick={this._submitEntry}
+                style={{ 'marginRight': '8px' }}
+              >
+                Save
+              </PrimaryButton>
+              <DefaultButton
+                onClick={this._showEntryForm}
+              >
+                Cancel
+              </DefaultButton>
+            </div>
+          </Modal>
         </div>
-        <Panel
-          isOpen={this.state.showEntryForm}
-          type={PanelType.medium}
-          headerText='Enter your predictions'
-          onRenderFooterContent={this._onRenderFooterContent}
-        >
-          <Dropdown
-            label='Winner'
-            options={this.state.driversList}
-            onChanged={ (item) => {this.setState(() => {return {
-                P1: item
-               }})}}
-          />
-          <Dropdown
-            label='P2'
-            options={this.state.driversList}
-            onChanged={ (item) => {this.setState(() => {return {
-              P2: item
-             }})}}
-          />
-          <Dropdown
-            label='P3'
-            options={this.state.driversList}
-            onChanged={ (item) => {this.setState(() => {return {
-              P3: item
-             }})}}
-          />
-          <Dropdown
-            label='P4'
-            options={this.state.driversList}
-            onChanged={ (item) => {this.setState(() => {return {
-              P4: item
-             }})}}
-          />
-          <Dropdown
-            label='P5'
-            options={this.state.driversList}
-            onChanged={ (item) => {this.setState(() => {return {
-              P5: item
-             }})}}
-          />
-        </Panel>
       </Fabric>
     );
   }
 
-  @autobind
-  private _onRenderFooterContent(): JSX.Element {
-    return (
-      <div>
-        <PrimaryButton
-          onClick={this._submitEntry}
-          style={{ 'marginRight': '8px' }}
-        >
-          Save
-        </PrimaryButton>
-        <DefaultButton
-          onClick={this._showEntryForm}
-        >
-          Cancel
-        </DefaultButton>
-      </div>
-    );
-  }
 
   public componentDidMount() {
     this._getNextRace().then(raceResponse => {
       this.setState(() => {
-        return { nextRaceTitle: raceResponse.value[0].Title,
-        nextRaceId: raceResponse.value[0].Id  };
+        var raceDate = new Date(raceResponse.value[0].RaceDate);
+        return {
+          nextRaceTitle: raceResponse.value[0].Title,
+          nextRaceId: raceResponse.value[0].Id,
+          nextRaceDate: raceDate.toDateString()
+        };
       });
 
       this._getUserEntry().then(entryResponse => {
@@ -158,13 +183,13 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
     this._getDriversList().then(driversResponse => {
       let driverOptions = [];
-      let previousTeam:string = '';
+      let previousTeam: string = '';
       driversResponse.value.forEach(driver => {
-        if(driver.Team != previousTeam){
-          if(previousTeam.length > 0){
+        if (driver.Team != previousTeam) {
+          if (previousTeam.length > 0) {
             driverOptions.push({ text: '-', itemType: DropdownMenuItemType.Divider });
           }
-          driverOptions.push({text: driver.Team, itemType: DropdownMenuItemType.Header });
+          driverOptions.push({ text: driver.Team, itemType: DropdownMenuItemType.Header });
         }
         previousTeam = driver.Team;
 
@@ -183,7 +208,7 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
 
   private _getNextRace(): Promise<IF1RaceList> {
-    let q: string = `<View><Query><Where><Geq><FieldRef Name='ID'/><Value Type='Number'>2</Value></Geq></Where></Query><RowLimit>100</RowLimit></View>`;
+    let q: string = `<View><Query><Where><Eq><FieldRef Name='Submission_Open' /><Value Type='Boolean'>1</Value></Eq></Where><OrderBy><FieldRef Name='Date' Ascending='True' /></OrderBy></Query></View>`;
 
     return this._listService.getListItemsByQuery(this._webUrl, this.LIST_TITLE_RACES, q);
   }
@@ -204,13 +229,16 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
 
   @autobind
   private _showEntryForm() {
-    this.setState(prevState => ({
-      showEntryForm: !prevState.showEntryForm
-    }));
+    this.setState((prevState, props) => {
+      return {
+        showEntryForm: !prevState.showEntryForm
+      }
+    }
+    );
   }
 
   @autobind
-  private _submitEntry(){
+  private _submitEntry() {
     let selectedData = {
       Entry_P1Id: this.state.P1.key,
       Entry_P2Id: this.state.P2.key,
@@ -220,6 +248,10 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
       RaceId: this.state.nextRaceId
     }
     this._listService.createItem(this._webUrl, this.LIST_TITLE_ENTRIES, selectedData);
-    this._showEntryForm();
+    this.setState((prevState, props) => {
+      return {
+        showEntryForm: false
+      }
+    });
   }
 }
