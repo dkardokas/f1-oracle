@@ -24,9 +24,26 @@ export class ListService {
 	 * @param listTitle : The title of the list which contains the elements to query
 	 * @param camlQuery : The CAML query to perform on the specified list
 	 **************************************************************************************************/
-	public getListItemsByQuery(webUrl: string, listTitle: string, camlQuery: string): Promise<any> {
+	public getListItemsByQuery(webUrl: string, listTitle: string, camlQuery: string, selectFields?: Array<string>, expandFields?: Array<string>): Promise<any> {
+		//var 
+		var expandStr:string = "";
+		if(expandFields){
+			expandStr = "$expand="
+			expandFields.forEach(fieldName => expandStr += fieldName + ",");
+			expandStr = expandStr.slice(0, -1); // remove extra comma
+		} else {
+			expandStr = "$expand=FieldValuesAsText,FieldValuesAsHtml";
+		}
+
+		var selectStr:string = "";
+		if(selectFields){
+			selectStr = "&$select=";
+			selectFields.forEach(fieldName => selectStr += fieldName + "/Title,");
+			selectStr = selectStr.slice(0, -1); // remove extra comma
+		}
+
 		return new Promise<any>((resolve, reject) => {
-			let endpoint = Text.format("{0}/_api/web/lists/GetByTitle('{1}')/GetItems?$expand=FieldValuesAsText,FieldValuesAsHtml", webUrl, listTitle);
+			let endpoint = Text.format("{0}/_api/web/lists/GetByTitle('{1}')/GetItems?" + expandStr + selectStr, webUrl, listTitle);
 			let data: any = {
 				query: {
 					__metadata: { type: "SP.CamlQuery" },
@@ -127,10 +144,27 @@ export class ListService {
 					});
 			})
 			.then((response: SPHttpClientResponse): void => {
-				//return response.json();
 				resolve(true);
 			});
 		});
+	}
+
+	public deleteItem(siteUrl: string, listName: string, id: number): Promise<boolean> {
+		return new Promise<boolean>((resolve: (result: boolean) => void, reject: (error: any) => void): void => {
+			this.spHttpClient.post(`${siteUrl}/_api/web/lists/getbytitle('${listName}')/items(${id})`,
+				SPHttpClient.configurations.v1,
+					{
+						headers: {
+							'Accept': 'application/json;odata=verbose',
+							'Content-type': 'application/json;odata=verbose',
+							"IF-MATCH": "*",
+							"X-HTTP-Method":"DELETE"
+						}
+					
+					}).then((response: SPHttpClientResponse): void => {
+						resolve(true);
+					});
+				});	
 	}
 
 
