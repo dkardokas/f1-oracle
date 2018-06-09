@@ -84,48 +84,6 @@ export default class F1Entry extends React.Component<IF1EntryProps, any> {
                 </div>
               </div>
             </div>
-            <div id="results" className={styles.csstransforms}>
-            <h2>Current Standings</h2>
-              <table className={styles["table-header-rotated"]}>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th className={styles.rotate}><div><span>Australian GP</span></div></th>
-                    <th className={styles.rotate}><div><span>Bahrain GP</span></div></th>
-                    <th className={styles.rotate}><div><span>Chinese GP</span></div></th>
-                    <th className={styles.rotate}><div><span>Total</span></div></th>
-                    <th className={styles.rotate}><div><span>Best x?</span></div></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th className="row-header">Player 1</th>
-                    <td>22</td>
-                    <td>78</td>
-                    <td>40</td>
-                    <td>140</td>
-                    <td>?</td>
-
-                  </tr>
-                  <tr>
-                    <th className="row-header">Player 2</th>
-                    <td>33</td>
-                    <td>66</td>
-                    <td>12</td>
-                    <td>111</td>
-                    <td>?</td>
-                  </tr>
-                  <tr>
-                    <th className="row-header">Payer 3</th>
-                    <td>44</td>
-                    <td>56</td>
-                    <td>0</td>
-                    <td>100</td>
-                    <td>?</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
 
           <Modal
